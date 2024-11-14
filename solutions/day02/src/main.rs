@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 fn main() {
     let lines = aoclib::read_lines("input/everybody_codes_e2024_q02_p1.txt");
@@ -15,8 +15,13 @@ fn main() {
         "part 2 = {}",
         lines[1..]
             .iter()
-            .fold(0, |num, line| num + part2(&words, &line))
+            .fold(0, |num, line| num + part2(&words, line))
     );
+
+    let lines = aoclib::read_lines("input/everybody_codes_e2024_q02_p3.txt");
+    let (_, wordlist) = lines[0].split_once(':').unwrap();
+    let words = wordlist.split(',').collect::<Vec<_>>();
+    println!("part 3 = {}", part3(&words, &lines[1..]));
 }
 
 fn part1(words: &[&str], line: &str) -> usize {
@@ -29,6 +34,7 @@ fn part1(words: &[&str], line: &str) -> usize {
         })
         .sum()
 }
+
 fn part2(words: &[&str], line: &str) -> usize {
     let mut runepos = HashSet::new();
     let rev = line.chars().rev().collect::<String>();
@@ -48,6 +54,63 @@ fn part2(words: &[&str], line: &str) -> usize {
         }
     }
 
+    runepos.len()
+}
+
+fn part3<S: AsRef<str>>(words: &[&str], lines: &[S]) -> usize {
+    let mut matrix = HashMap::<(i64, i64), char>::new();
+    let rows = lines.len() as i64;
+    let cols = lines[0].as_ref().len() as i64;
+
+    for (row, line) in lines.iter().enumerate() {
+        for (col, ch) in line.as_ref().chars().enumerate() {
+            matrix.insert((row as i64, col as i64), ch);
+        }
+    }
+
+    let mut runepos = HashSet::new();
+
+    for word in words {
+        let chars = word.chars().collect::<Vec<_>>();
+        for r in 0..rows {
+            for c in 0..cols {
+                'next_dir: for dir in [(-1_i64, 0_i64), (1, 0), (0, -1), (0, 1)] {
+                    let mut rloc = r;
+                    let mut cloc = c;
+
+                    for ch in &chars {
+                        if rloc < 0 || rloc >= rows {
+                            continue 'next_dir;
+                        }
+
+                        if *ch != *matrix.get(&(rloc, cloc)).unwrap() {
+                            continue 'next_dir;
+                        }
+                        rloc += dir.0;
+                        cloc += dir.1;
+                        if cloc < 0 {
+                            cloc = cols - 1;
+                        } else if cloc >= cols {
+                            cloc = 0;
+                        }
+                    }
+                    rloc = r;
+                    cloc = c;
+
+                    for _ in 0..word.len() {
+                        runepos.insert((rloc, cloc));
+                        rloc += dir.0;
+                        cloc += dir.1;
+                        if cloc < 0 {
+                            cloc = cols - 1;
+                        } else if cloc >= cols {
+                            cloc = 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
     runepos.len()
 }
 
@@ -91,5 +154,13 @@ mod tests {
     fn test_multiple() {
         let words = ["THE", "OWE", "MES", "ROD", "HER"];
         assert_eq!(12, part2(&words, "MESMESMESMES"));
+    }
+
+    #[test]
+    fn test_part3() {
+        let words = ["THE", "OWE", "MES", "ROD", "RODEO"];
+        let lines = ["HELWORLT", "ENIGWDXL", "TRODEOAL"];
+
+        assert_eq!(10, part3(&words, &lines));
     }
 }
