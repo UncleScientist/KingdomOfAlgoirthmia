@@ -2,18 +2,16 @@ use std::collections::HashSet;
 
 fn main() {
     let lines = aoclib::read_lines("input/everybody_codes_e2024_q03_p1.txt");
-
     let mut map = Map::new(&lines);
-    let mut total = 0;
-    loop {
-        let count = map.earth.len();
-        if count == 0 {
-            break;
-        }
-        total += count;
-        map.step();
-    }
-    println!("part 1 = {total}");
+    println!("part 1 = {}", map.total(false));
+
+    let lines = aoclib::read_lines("input/everybody_codes_e2024_q03_p2.txt");
+    let mut map = Map::new(&lines);
+    println!("part 2 = {}", map.total(false));
+
+    let lines = aoclib::read_lines("input/everybody_codes_e2024_q03_p3.txt");
+    let mut map = Map::new(&lines);
+    println!("part 3 = {}", map.total(true));
 }
 
 #[derive(Debug)]
@@ -34,7 +32,20 @@ impl Map {
         Self { earth }
     }
 
-    fn step(&mut self) {
+    fn total(&mut self, diagonals: bool) -> usize {
+        let mut total = 0;
+        loop {
+            let count = self.earth.len();
+            if count == 0 {
+                break;
+            }
+            total += count;
+            self.step(diagonals);
+        }
+        total
+    }
+
+    fn step(&mut self, diagonals: bool) {
         let new_earth = self
             .earth
             .iter()
@@ -43,6 +54,11 @@ impl Map {
                     && self.earth.contains(&(*row + 1, *col))
                     && self.earth.contains(&(*row, *col - 1))
                     && self.earth.contains(&(*row, *col + 1))
+                    && (!diagonals
+                        || (self.earth.contains(&(*row - 1, *col - 1))
+                            && self.earth.contains(&(*row + 1, *col + 1))
+                            && self.earth.contains(&(*row + 1, *col - 1))
+                            && self.earth.contains(&(*row - 1, *col + 1))))
                 {
                     Some((*row, *col))
                 } else {
