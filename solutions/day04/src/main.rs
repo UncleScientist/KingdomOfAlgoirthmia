@@ -1,9 +1,12 @@
 fn main() {
     let nails: Vec<usize> = aoclib::read_numbers("input/everybody_codes_e2024_q04_p1.txt");
-    println!("part 1 = {}", part1(&nails));
+    println!("part 1 = {}", parts_1and2(&nails));
+
+    let nails: Vec<usize> = aoclib::read_numbers("input/everybody_codes_e2024_q04_p2.txt");
+    println!("part 2 = {}", parts_1and2(&nails));
 }
 
-fn part1(nails: &[usize]) -> usize {
+fn parts_1and2(nails: &[usize]) -> usize {
     let min = nails.iter().min().unwrap();
     nails.iter().map(|nail| *nail - min).sum()
 }
@@ -14,6 +17,6 @@ mod test {
 
     #[test]
     fn test_part_1() {
-        assert_eq!(10, part1(&[3, 4, 7, 8]));
+        assert_eq!(10, parts_1and2(&[3, 4, 7, 8]));
     }
 }
