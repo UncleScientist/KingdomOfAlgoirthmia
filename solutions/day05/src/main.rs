@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 fn main() {
     let data: Vec<Vec<i64>> = aoclib::numbers("input/everybody_codes_e2024_q05_p1.txt", ' ');
@@ -8,6 +8,10 @@ fn main() {
     let data: Vec<Vec<i64>> = aoclib::numbers("input/everybody_codes_e2024_q05_p2.txt", ' ');
     let mut numbers = transpose(&data);
     println!("part 2 = {}", part2(&mut numbers));
+
+    let data: Vec<Vec<i64>> = aoclib::numbers("input/everybody_codes_e2024_q05_p3.txt", ' ');
+    let mut numbers = transpose(&data);
+    println!("part 3 = {}", part3(&mut numbers));
 }
 
 fn part1(numbers: &mut [Vec<i64>]) -> String {
@@ -43,6 +47,27 @@ fn part2(numbers: &mut [Vec<i64>]) -> String {
         }
     }
     "ran out of numbers in usize".to_string()
+}
+
+fn part3(numbers: &mut [Vec<i64>]) -> String {
+    let mut loop_detector = HashSet::new();
+    let mut max_shout = 0;
+    let mut col = 0;
+    loop {
+        let dancer = numbers[col].remove(0);
+        col = (col + 1) % numbers.len();
+        dance(dancer, &mut numbers[col]);
+        if loop_detector.insert(numbers.to_owned()) {
+            let shout = numbers.iter().fold(String::new(), |mut output, col| {
+                output.push_str(&format!("{}", col[0]));
+                output
+            });
+            let shout = shout.parse::<usize>().unwrap();
+            max_shout = shout.max(max_shout);
+        } else {
+            return format!("{max_shout}");
+        }
+    }
 }
 
 fn transpose(data: &[Vec<i64>]) -> Vec<Vec<i64>> {
