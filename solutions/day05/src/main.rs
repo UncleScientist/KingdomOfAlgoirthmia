@@ -1,7 +1,13 @@
+use std::collections::HashMap;
+
 fn main() {
     let data: Vec<Vec<i64>> = aoclib::numbers("input/everybody_codes_e2024_q05_p1.txt", ' ');
     let mut numbers = transpose(&data);
     println!("part 1 = {}", part1(&mut numbers));
+
+    let data: Vec<Vec<i64>> = aoclib::numbers("input/everybody_codes_e2024_q05_p2.txt", ' ');
+    let mut numbers = transpose(&data);
+    println!("part 2 = {}", part2(&mut numbers));
 }
 
 fn part1(numbers: &mut [Vec<i64>]) -> String {
@@ -12,7 +18,31 @@ fn part1(numbers: &mut [Vec<i64>]) -> String {
         dance(dancer, &mut numbers[col]);
     }
 
-    numbers.iter().map(|col| format!("{}", col[0])).collect()
+    numbers.iter().fold(String::new(), |mut output, col| {
+        output.push_str(&format!("{}", col[0]));
+        output
+    })
+}
+
+fn part2(numbers: &mut [Vec<i64>]) -> String {
+    let mut shouts = HashMap::<String, usize>::new();
+    let mut col = 0;
+    for round in 1.. {
+        let dancer = numbers[col].remove(0);
+        col = (col + 1) % numbers.len();
+        dance(dancer, &mut numbers[col]);
+        let shout = numbers.iter().fold(String::new(), |mut output, col| {
+            output.push_str(&format!("{}", col[0]));
+            output
+        });
+        let entry = shouts.entry(shout.clone()).or_default();
+        *entry += 1;
+        if *entry == 2024 {
+            let shout = shout.parse::<usize>().unwrap();
+            return format!("{}", shout * round);
+        }
+    }
+    "ran out of numbers in usize".to_string()
 }
 
 fn transpose(data: &[Vec<i64>]) -> Vec<Vec<i64>> {
@@ -33,11 +63,12 @@ fn transpose(data: &[Vec<i64>]) -> Vec<Vec<i64>> {
 //   1   2  3  4
 
 fn dance(dancer: i64, line: &mut Vec<i64>) {
-    let pos = (dancer - 1) as usize;
+    let size = 2 * line.len();
+    let pos = ((dancer - 1) as usize) % size;
     if pos < line.len() {
         line.insert(pos, dancer);
     } else {
-        let pos = line.len() - (pos - line.len());
+        let pos = size - pos;
         line.insert(pos, dancer);
     }
 }
@@ -46,7 +77,7 @@ fn dance(dancer: i64, line: &mut Vec<i64>) {
 mod test {
     use super::*;
 
-    fn data() -> Vec<Vec<i64>> {
+    fn part1_data() -> Vec<Vec<i64>> {
         vec![
             vec![2, 3, 4, 5],
             vec![3, 4, 5, 2],
@@ -57,7 +88,7 @@ mod test {
 
     #[test]
     fn test_transpose() {
-        let data = data();
+        let data = part1_data();
         let numbers = transpose(&data);
         assert_eq!(vec![2, 3, 4, 5], numbers[0]);
         assert_eq!(vec![5, 2, 3, 4], numbers[3]);
@@ -65,7 +96,7 @@ mod test {
 
     #[test]
     fn test_forward_insert() {
-        let data = data();
+        let data = part1_data();
         let mut numbers = transpose(&data);
         dance(2, &mut numbers[1]);
         assert_eq!(vec![3, 2, 4, 5, 2], numbers[1]);
@@ -73,7 +104,7 @@ mod test {
 
     #[test]
     fn test_reverse_insert() {
-        let data = data();
+        let data = part1_data();
         let mut numbers = transpose(&data);
         dance(6, &mut numbers[1]);
         assert_eq!(vec![3, 4, 5, 6, 2], numbers[1]);
@@ -81,9 +112,16 @@ mod test {
 
     #[test]
     fn test_end_insert() {
-        let data = data();
+        let data = part1_data();
         let mut numbers = transpose(&data);
         dance(5, &mut numbers[1]);
         assert_eq!(vec![3, 4, 5, 2, 5], numbers[1]);
+    }
+
+    #[test]
+    fn test_part_2() {
+        let data = vec![vec![2, 3, 4, 5], vec![6, 7, 8, 9]];
+        let mut numbers = transpose(&data);
+        assert_eq!("50877075".to_string(), part2(&mut numbers));
     }
 }
