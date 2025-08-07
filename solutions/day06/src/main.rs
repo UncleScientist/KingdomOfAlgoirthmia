@@ -1,15 +1,27 @@
 use std::collections::{HashMap, VecDeque};
 
 fn main() {
+    // my part 1 answer: RRLBFNDPQTXH@
     let lines = aoclib::read_lines("input/everybody_codes_e2024_q06_p1.txt");
     let tree = Tree::new(lines);
-    // RRLBFNDPQTXH@
     println!("part 1 = {}", tree.find_shortest().join(""));
 
+    // my part 2 answer: RKCVKHRFXS@
     let lines = aoclib::read_lines("input/everybody_codes_e2024_q06_p2.txt");
     let tree = Tree::new(lines);
     println!(
         "part 2 = {}",
+        tree.find_shortest()
+            .iter()
+            .map(|branch| branch.chars().next().unwrap())
+            .collect::<String>()
+    );
+
+    // my part 3 answer: tbd
+    let lines = aoclib::read_lines("input/everybody_codes_e2024_q06_p3.txt");
+    let tree = Tree::new(lines);
+    println!(
+        "part 3 = {}",
         tree.find_shortest()
             .iter()
             .map(|branch| branch.chars().next().unwrap())
@@ -26,7 +38,14 @@ impl Tree {
         let mut branches = HashMap::new();
         for s in lines {
             let (left, right) = s.split_once(':').unwrap();
-            let words = right.split(',').map(|s| s.to_string()).collect::<Vec<_>>();
+            if left == "ANT" || left == "BUG" {
+                continue;
+            }
+            let words = right
+                .split(',')
+                .filter(|s| *s != "ANT" && *s != "BUG")
+                .map(|s| s.to_string())
+                .collect::<Vec<_>>();
             branches.insert(left.into(), words);
         }
 
