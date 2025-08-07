@@ -3,7 +3,18 @@ use std::collections::{HashMap, VecDeque};
 fn main() {
     let lines = aoclib::read_lines("input/everybody_codes_e2024_q06_p1.txt");
     let tree = Tree::new(lines);
-    println!("part 1 = {}", tree.find_shortest());
+    // RRLBFNDPQTXH@
+    println!("part 1 = {}", tree.find_shortest().join(""));
+
+    let lines = aoclib::read_lines("input/everybody_codes_e2024_q06_p2.txt");
+    let tree = Tree::new(lines);
+    println!(
+        "part 2 = {}",
+        tree.find_shortest()
+            .iter()
+            .map(|branch| branch.chars().next().unwrap())
+            .collect::<String>()
+    );
 }
 
 struct Tree {
@@ -22,7 +33,7 @@ impl Tree {
         Self { branches }
     }
 
-    fn find_shortest(&self) -> String {
+    fn find_shortest(&self) -> Vec<String> {
         let mut lengths = HashMap::<usize, usize>::new();
         let mut queue = VecDeque::new();
         queue.push_back(("RR".to_string(), Vec::<String>::from(["RR".to_string()])));
@@ -45,11 +56,10 @@ impl Tree {
         }
 
         let unique_length = lengths.iter().find(|(_, count)| **count == 1).unwrap().0;
-        println!("unique = {unique_length}");
 
         for s in solutions {
             if s.len() == *unique_length {
-                return s.join("");
+                return s;
             }
         }
         panic!("solution not found");
@@ -71,6 +81,9 @@ mod test {
     fn test_solve_part_1() {
         let lines = aoclib::read_lines("test-input/test-part-1.txt");
         let tree = Tree::new(lines);
-        assert_eq!("RRB@".to_string(), tree.find_shortest());
+        assert_eq!(
+            vec!["RR".to_string(), "B".to_string(), "@".to_string()],
+            tree.find_shortest()
+        );
     }
 }
