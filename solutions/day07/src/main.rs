@@ -1,4 +1,10 @@
-use std::{path::Path, str::FromStr};
+use std::{
+    collections::{HashMap, HashSet},
+    path::Path,
+    str::FromStr,
+};
+
+use aoclib::Permutations;
 
 fn main() {
     let lines = aoclib::read_lines("input/everybody_codes_e2024_q07_p1.txt");
@@ -26,9 +32,26 @@ fn main() {
         "part 2 = {}",
         scores.iter().map(|score| score.0).collect::<String>()
     );
+
+    let lines = aoclib::read_lines("input/everybody_codes_e2024_q07_p3.txt");
+    let rival_plan: Plan = lines[0].parse().unwrap();
+    let track = Track::init("input/track-part-3.txt");
+    let rival_score = track.execute_plan(&rival_plan, 2024);
+
+    let options = vec!["+", "+", "+", "+", "+", "-", "-", "-", "=", "=", "="];
+    let mut seen = HashSet::new();
+    let mut better = 0;
+    for permutation in options.permutations() {
+        if seen.insert(permutation.clone()) {
+            let plan_string = format!("P:{}", permutation.join(","));
+            let plan: Plan = plan_string.parse().unwrap();
+            better += (track.execute_plan(&plan, 2024) > rival_score) as usize;
+        }
+    }
+    println!("part 3 = {better}");
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Copy, Clone)]
 enum Action {
     Increase,
     Decrease,
@@ -121,22 +144,38 @@ impl Track {
 
         let lines = aoclib::read_lines(path);
 
-        // top line
-        track.extend(lines[0].chars().map(|s| s.into()));
+        let mut grid: HashMap<(i64, i64), Action> = HashMap::new();
 
-        // right side
-        for line in lines.iter().take(lines.len() - 1).skip(1) {
-            let last_char = line.chars().next_back().unwrap();
-            track.push(last_char.into());
+        for (row, line) in lines.iter().enumerate() {
+            for (col, ch) in line.chars().enumerate() {
+                if ch != ' ' {
+                    grid.insert((row as i64, col as i64), ch.into());
+                }
+            }
         }
 
-        // bottom (reverse)
-        track.extend(lines[lines.len() - 1].chars().rev().map(|s| s.into()));
+        let dirs = [
+            [(-1i64, 0i64), (0, 1), (1, 0)], /* facing east */
+            [(0, 1), (1, 0), (0, -1)],       /* facing south */
+            [(1, 0), (0, -1), (-1, 0)],      /* facing west */
+            [(0, -1), (-1, 0), (0, 1)],      /* facing north */
+        ];
 
-        // left side (bottom up)
-        for index in (1..lines.len() - 1).rev() {
-            let last_char = lines[index].chars().next().unwrap();
-            track.push(last_char.into());
+        assert_eq!(grid.get(&(0, 0)), Some(Action::StartEnd).as_ref());
+        track.push(Action::StartEnd);
+
+        let mut pos = (0, 1);
+        let mut facing = 0;
+        while pos != (0, 0) {
+            track.push(*grid.get(&pos).unwrap());
+            for (index, dir) in dirs[facing].iter().enumerate() {
+                let newpos = (pos.0 + dir.0, pos.1 + dir.1);
+                if grid.contains_key(&newpos) {
+                    pos = newpos;
+                    facing = (facing + index + (dirs.len() - 1)) % dirs.len();
+                    break;
+                }
+            }
         }
 
         Self { track }
@@ -183,6 +222,19 @@ mod test {
         let track = Track::init("input/test-track.txt");
 
         assert_eq!(1290, track.execute_plan(&plan, 10));
+    }
+
+    #[test]
+    fn test_track() {
+        let track = Track::init("input/test-track.txt");
+        use Action::*;
+        assert_eq!(
+            vec![
+                StartEnd, Increase, Equal, Equal, Equal, Increase, Increase, Decrease, Equal,
+                Increase, Equal, Decrease
+            ],
+            track.track
+        );
     }
 
     #[test]
