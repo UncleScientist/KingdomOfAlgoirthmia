@@ -25,12 +25,13 @@ fn main() {
     let mut stamps = CoinChange::new(&[
         1, 3, 5, 10, 15, 16, 20, 24, 25, 30, 37, 38, 49, 50, 74, 75, 100, 101,
     ]);
-    let mut total = 0;
-    for b in brightnesses {
-        println!("{b}");
-        total += find_best_split(&mut stamps, b);
-    }
-    println!("part 3 = {total}");
+    println!(
+        "part 3 = {}",
+        brightnesses
+            .into_iter()
+            .map(|b| find_best_split(&mut stamps, b))
+            .sum::<usize>()
+    );
 }
 
 fn find_best_split(cc: &mut CoinChange<usize>, value: usize) -> usize {
