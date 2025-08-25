@@ -5,7 +5,7 @@ version = 4
 [[package]]
 name = "aoclib"
 version = "0.1.0"
-source = "git+https://github.com/UncleScientist/aoclib-rs.git#c2e837b2977350e65dcd23e2e2201d138327a655"
+source = "git+https://github.com/UncleScientist/aoclib-rs.git#027fa39b205286ee5c652ede45f511ad240957dd"
 
 [[package]]
 name = "day01"
