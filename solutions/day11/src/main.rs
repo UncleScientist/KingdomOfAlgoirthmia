@@ -3,10 +3,11 @@ use std::collections::HashMap;
 fn main() {
     let lines = aoclib::read_lines("input/everybody_codes_e2024_q11_p1.txt");
     let termites = Termites::new(&lines);
-
     println!("part 1 = {}", termites.count("A", 4));
 
-    //let lines = aoclib::read_lines("input/everybody_codes_e2024_q11_p2.txt");
+    let lines = aoclib::read_lines("input/everybody_codes_e2024_q11_p2.txt");
+    let termites = Termites::new(&lines);
+    println!("part 2 = {}", termites.count("Z", 10));
 }
 
 struct Termites<'a> {
