@@ -50,9 +50,6 @@ fn main() {
 
         // for line in &grid { println!("{}", line.iter().collect::<String>()); }
     }
-    for line in &grid {
-        println!("{}", line.iter().collect::<String>());
-    }
 
     let mut total_power = 0;
     let mut startrow = 0;
@@ -85,8 +82,12 @@ fn fill_in(grid: &mut [Vec<char>], startrow: usize, startcol: usize) -> bool {
                 .collect::<HashSet<char>>();
             let intersect = row_letters.intersection(&col_letters).collect::<Vec<_>>();
             if intersect.len() == 1 {
+                let ch = *intersect[0];
+                if ch == '?' {
+                    continue;
+                }
                 // println!( "fill in at {},{} -> {}", startrow + row, startcol + col, *intersect[0]);
-                grid[startrow + row][startcol + col] = *intersect[0];
+                grid[startrow + row][startcol + col] = ch;
                 changed = true;
             }
         }
@@ -171,7 +172,7 @@ fn calculate_word(grid: &[Vec<char>], startrow: usize, startcol: usize) -> usize
                 return 0;
             }
             set |= 1 << id;
-            sum += index * ((ch as u8 - b'A') as usize);
+            sum += index * (((ch as u8 - b'A') as usize) + 1);
             index += 1;
         }
     }
