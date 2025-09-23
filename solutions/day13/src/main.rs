@@ -4,12 +4,12 @@ fn main() {
     let lines = aoclib::read_lines("input/everybody_codes_e2024_q13_p1.txt");
     let grid = Grid::parse(&lines);
     // grid._print();
-    println!("part 1 = {}", grid.dijkstra_search().unwrap());
+    println!("part 1 = {}", grid.dijkstra_search_simple().unwrap());
 
     let lines = aoclib::read_lines("input/everybody_codes_e2024_q13_p2.txt");
     let grid = Grid::parse(&lines);
     // grid._print();
-    println!("part 2 = {}", grid.dijkstra_search().unwrap());
+    println!("part 2 = {}", grid.dijkstra_search_simple().unwrap());
 }
 
 #[derive(Debug)]
@@ -95,15 +95,26 @@ impl Grid {
         result
     }
 
-    fn dijkstra_search(&self) -> Option<i64> {
+    fn dijkstra_search_simple(&self) -> Option<i64> {
+        let start = self.start;
+        let is_end = |pos: &(i64, i64)| self.end == *pos;
+
+        self.dijkstra_search(&start, is_end)
+    }
+
+    fn dijkstra_search(
+        &self,
+        start: &(i64, i64),
+        is_end: impl Fn(&(i64, i64)) -> bool,
+    ) -> Option<i64> {
         let mut queue = BTreeSet::from([(0, self.start)]);
         let mut visited = HashSet::new();
         let mut dist = HashMap::new();
 
-        dist.insert(self.start, 0);
+        dist.insert(*start, 0);
 
         while let Some((time, pos)) = queue.pop_first() {
-            if pos == self.end {
+            if is_end(&pos) {
                 return Some(time);
             }
             if visited.insert(pos) {
@@ -160,7 +171,7 @@ mod test {
     fn test_search() {
         let lines = ["#######", "#6769##", "S50505E", "#97434#", "#######"];
         let grid = Grid::parse(&lines);
-        assert_eq!(Some(28), grid.dijkstra_search());
+        assert_eq!(Some(28), grid.dijkstra_search_simple());
     }
 
     #[test]
