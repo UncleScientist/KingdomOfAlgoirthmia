@@ -10,12 +10,21 @@ fn main() {
     let grid = Grid::parse(&lines);
     // grid._print();
     println!("part 2 = {}", grid.dijkstra_search_simple().unwrap());
+
+    let lines = aoclib::read_lines("input/everybody_codes_e2024_q13_p3.txt");
+    let grid = Grid::parse(&lines);
+    // grid._print();
+    println!(
+        "part 3 = {}",
+        grid.dijkstra_search(&grid.end, |pos| grid.start.contains(pos))
+            .unwrap()
+    );
 }
 
 #[derive(Debug)]
 struct Grid {
     grid: HashMap<(i64, i64), i64>,
-    start: (i64, i64),
+    start: HashSet<(i64, i64)>,
     end: (i64, i64),
     _rows: usize,
     _cols: usize,
@@ -37,7 +46,7 @@ impl Grid {
 
     fn parse<S: AsRef<str>>(lines: &[S]) -> Self {
         let mut grid = HashMap::new();
-        let mut start = None;
+        let mut start = HashSet::new();
         let mut end = None;
         let rows = lines.len();
         let cols = lines[0].as_ref().len();
@@ -48,7 +57,7 @@ impl Grid {
                 if let Some(level) = match ch {
                     'S' | 'E' => {
                         if ch == 'S' {
-                            start = Some(pos);
+                            start.insert(pos);
                         } else {
                             end = Some(pos);
                         }
@@ -65,7 +74,7 @@ impl Grid {
 
         Self {
             grid,
-            start: start.unwrap(),
+            start,
             end: end.unwrap(),
             _rows: rows,
             _cols: cols,
@@ -96,10 +105,10 @@ impl Grid {
     }
 
     fn dijkstra_search_simple(&self) -> Option<i64> {
-        let start = self.start;
+        let start = self.start.iter().next().unwrap();
         let is_end = |pos: &(i64, i64)| self.end == *pos;
 
-        self.dijkstra_search(&start, is_end)
+        self.dijkstra_search(start, is_end)
     }
 
     fn dijkstra_search(
@@ -107,7 +116,7 @@ impl Grid {
         start: &(i64, i64),
         is_end: impl Fn(&(i64, i64)) -> bool,
     ) -> Option<i64> {
-        let mut queue = BTreeSet::from([(0, self.start)]);
+        let mut queue = BTreeSet::from([(0, *start)]);
         let mut visited = HashSet::new();
         let mut dist = HashMap::new();
 
