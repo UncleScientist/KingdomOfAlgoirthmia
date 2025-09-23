@@ -5,6 +5,11 @@ fn main() {
     let grid = Grid::parse(&lines);
     // grid._print();
     println!("part 1 = {}", grid.dijkstra_search().unwrap());
+
+    let lines = aoclib::read_lines("input/everybody_codes_e2024_q13_p2.txt");
+    let grid = Grid::parse(&lines);
+    // grid._print();
+    println!("part 2 = {}", grid.dijkstra_search().unwrap());
 }
 
 #[derive(Debug)]
