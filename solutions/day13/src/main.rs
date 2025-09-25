@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{HashMap, HashSet};
 
 fn main() {
     let lines = aoclib::read_lines("input/everybody_codes_e2024_q13_p1.txt");
@@ -16,8 +16,12 @@ fn main() {
     // grid._print();
     println!(
         "part 3 = {}",
-        grid.dijkstra_search(&grid.end, |pos| grid.start.contains(pos))
-            .unwrap()
+        search::dijkstra_search(
+            &grid.end,
+            |pos| grid.neighbors(pos),
+            |pos| grid.start.contains(pos)
+        )
+        .unwrap()
     );
 }
 
@@ -106,21 +110,31 @@ impl Grid {
 
     fn dijkstra_search_simple(&self) -> Option<i64> {
         let start = self.start.iter().next().unwrap();
+        let neighbors = |pos: &(i64, i64)| self.neighbors(pos);
         let is_end = |pos: &(i64, i64)| self.end == *pos;
 
-        self.dijkstra_search(start, is_end)
+        search::dijkstra_search(start, neighbors, is_end)
     }
+}
 
-    fn dijkstra_search(
-        &self,
-        start: &(i64, i64),
-        is_end: impl Fn(&(i64, i64)) -> bool,
-    ) -> Option<i64> {
-        let mut queue = BTreeMap::from([(0, HashSet::from([*start]))]);
+mod search {
+    use std::{
+        collections::{BTreeMap, HashMap, HashSet},
+        hash::Hash,
+        ops::Add,
+    };
+
+    pub fn dijkstra_search<T: Copy + Hash + Eq, S: Copy + From<u8> + Ord + Add<Output = S>>(
+        start: &T,
+        neighbors: impl Fn(&T) -> Vec<(T, S)>,
+        is_end: impl Fn(&T) -> bool,
+    ) -> Option<S> {
+        let zero: S = 0u8.into();
+        let mut queue = BTreeMap::from([(zero, HashSet::from([*start]))]);
         let mut visited = HashSet::new();
         let mut dist = HashMap::new();
 
-        dist.insert(*start, Some(0));
+        dist.insert(*start, Some(zero));
 
         while let Some((time, pos_list)) = queue.pop_first() {
             for pos in pos_list {
@@ -128,17 +142,20 @@ impl Grid {
                     return Some(time);
                 }
                 if visited.insert(pos) {
-                    for (new_pos, cost) in self.neighbors(&pos) {
+                    for (new_pos, cost) in neighbors(&pos) {
                         let new_time = time + cost;
-                        if let Some(old_time) = dist.entry(new_pos).or_insert(None) {
-                            if new_time >= *old_time {
+                        if let Some(dist_time) = dist.entry(new_pos).or_insert(None) {
+                            if new_time >= *dist_time {
                                 continue;
                             }
 
-                            let old_time = *old_time;
+                            let old_time = *dist_time;
+                            *dist_time = new_time;
+
                             queue.entry(old_time).or_default().remove(&pos);
+                        } else {
+                            dist.insert(new_pos, Some(new_time));
                         }
-                        dist.insert(new_pos, Some(new_time));
                         queue.entry(new_time).or_default().insert(new_pos);
                     }
                 }
