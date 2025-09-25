@@ -1,4 +1,4 @@
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 fn main() {
     let lines = aoclib::read_lines("input/everybody_codes_e2024_q13_p1.txt");
@@ -116,23 +116,30 @@ impl Grid {
         start: &(i64, i64),
         is_end: impl Fn(&(i64, i64)) -> bool,
     ) -> Option<i64> {
-        let mut queue = BTreeSet::from([(0, *start)]);
+        let mut queue = BTreeMap::from([(0, HashSet::from([*start]))]);
         let mut visited = HashSet::new();
         let mut dist = HashMap::new();
 
-        dist.insert(*start, 0);
+        dist.insert(*start, Some(0));
 
-        while let Some((time, pos)) = queue.pop_first() {
-            if is_end(&pos) {
-                return Some(time);
-            }
-            if visited.insert(pos) {
-                for (new_pos, cost) in self.neighbors(&pos) {
-                    let new_time = time + cost;
-                    let old_time = dist.entry(new_pos).or_insert(i64::MAX);
-                    if new_time < *old_time {
-                        dist.insert(new_pos, new_time);
-                        queue.insert((new_time, new_pos));
+        while let Some((time, pos_list)) = queue.pop_first() {
+            for pos in pos_list {
+                if is_end(&pos) {
+                    return Some(time);
+                }
+                if visited.insert(pos) {
+                    for (new_pos, cost) in self.neighbors(&pos) {
+                        let new_time = time + cost;
+                        if let Some(old_time) = dist.entry(new_pos).or_insert(None) {
+                            if new_time >= *old_time {
+                                continue;
+                            }
+
+                            let old_time = *old_time;
+                            queue.entry(old_time).or_default().remove(&pos);
+                        }
+                        dist.insert(new_pos, Some(new_time));
+                        queue.entry(new_time).or_default().insert(new_pos);
                     }
                 }
             }
