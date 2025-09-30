@@ -16,12 +16,13 @@ fn main() {
     // grid._print();
     println!(
         "part 3 = {}",
-        search::dijkstra_search(
+        aoclib::ucs(
             &grid.end,
             |pos| grid.neighbors(pos),
             |pos| grid.start.contains(pos)
         )
         .unwrap()
+        .1
     );
 }
 
@@ -113,56 +114,11 @@ impl Grid {
         let neighbors = |pos: &(i64, i64)| self.neighbors(pos);
         let is_end = |pos: &(i64, i64)| self.end == *pos;
 
-        search::dijkstra_search(start, neighbors, is_end)
-    }
-}
-
-mod search {
-    use std::{
-        collections::{BTreeMap, HashMap, HashSet},
-        hash::Hash,
-        ops::Add,
-    };
-
-    pub fn dijkstra_search<T: Copy + Hash + Eq, S: Copy + From<u8> + Ord + Add<Output = S>>(
-        start: &T,
-        neighbors: impl Fn(&T) -> Vec<(T, S)>,
-        is_end: impl Fn(&T) -> bool,
-    ) -> Option<S> {
-        let zero: S = 0u8.into();
-        let mut queue = BTreeMap::from([(zero, HashSet::from([*start]))]);
-        let mut visited = HashSet::new();
-        let mut dist = HashMap::new();
-
-        dist.insert(*start, Some(zero));
-
-        while let Some((time, pos_list)) = queue.pop_first() {
-            for pos in pos_list {
-                if is_end(&pos) {
-                    return Some(time);
-                }
-                if visited.insert(pos) {
-                    for (new_pos, cost) in neighbors(&pos) {
-                        let new_time = time + cost;
-                        if let Some(dist_time) = dist.entry(new_pos).or_insert(None) {
-                            if new_time >= *dist_time {
-                                continue;
-                            }
-
-                            let old_time = *dist_time;
-                            *dist_time = new_time;
-
-                            queue.entry(old_time).or_default().remove(&pos);
-                        } else {
-                            dist.insert(new_pos, Some(new_time));
-                        }
-                        queue.entry(new_time).or_default().insert(new_pos);
-                    }
-                }
-            }
+        if let Some((_, score)) = aoclib::ucs(start, neighbors, is_end) {
+            Some(score)
+        } else {
+            None
         }
-
-        None
     }
 }
 
