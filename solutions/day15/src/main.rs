@@ -5,14 +5,15 @@ fn main() {
     let garden = Garden::parse(&data);
     println!("part 1 = {}", garden.search_any().unwrap() * 2);
 
-    //let data = std::fs::read_to_string("input/everybody_codes_e2024_q15_p2.txt").expect("file");
-    let data = std::fs::read_to_string("input/test_2.txt").expect("file");
+    let data = std::fs::read_to_string("input/everybody_codes_e2024_q15_p2.txt").expect("file");
+    //let data = std::fs::read_to_string("input/test_2.txt").expect("file");
     let garden = Garden::parse(&data);
     println!("part 2 = {}", garden.search_all().unwrap());
 }
 
 struct Garden {
     maze: HashSet<(i64, i64)>,
+    herb_types: HashSet<char>,
     herbs: HashMap<(i64, i64), char>,
     start: (i64, i64),
 }
@@ -20,6 +21,7 @@ struct Garden {
 impl Garden {
     fn parse(data: &str) -> Self {
         let mut maze = HashSet::<(i64, i64)>::new();
+        let mut herb_types = HashSet::<char>::new();
         let mut herbs = HashMap::<(i64, i64), char>::new();
         let mut start = (0, 0);
 
@@ -37,13 +39,19 @@ impl Garden {
                     'A'..='Z' => {
                         maze.insert(loc);
                         herbs.insert(loc, ch);
+                        herb_types.insert(ch);
                     }
                     _ => panic!("invalid character '{ch}'"),
                 }
             }
         }
 
-        Self { maze, herbs, start }
+        Self {
+            maze,
+            herbs,
+            herb_types,
+            start,
+        }
     }
 
     fn search_any(&self) -> Option<usize> {
@@ -67,7 +75,32 @@ impl Garden {
     }
 
     fn search_all(&self) -> Option<usize> {
-        None
+        let herbs_remaining = (1u64 << self.herb_types.len()) - 1;
+        let start_state = (herbs_remaining, self.start);
+
+        search::bfs(
+            &start_state,
+            |(remaining, pos)| {
+                [(-1, 0), (1, 0), (0, -1), (0, 1)]
+                    .iter()
+                    .filter_map(|delta| {
+                        let next = (pos.0 + delta.0, pos.1 + delta.1);
+                        if self.maze.contains(&next) {
+                            let next_remaining = if let Some(h) = self.herbs.get(&next) {
+                                let bit = 1u64 << (*h as u8 - b'A');
+                                remaining & !bit
+                            } else {
+                                *remaining
+                            };
+                            Some((next_remaining, next))
+                        } else {
+                            None
+                        }
+                    })
+                    .collect()
+            },
+            |(remaining, pos)| *remaining == 0 && *pos == self.start,
+        )
     }
 }
 
