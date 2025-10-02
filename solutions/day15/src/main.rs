@@ -9,11 +9,15 @@ fn main() {
     //let data = std::fs::read_to_string("input/test_2.txt").expect("file");
     let garden = Garden::parse(&data);
     println!("part 2 = {}", garden.search_all().unwrap());
+
+    let data = std::fs::read_to_string("input/everybody_codes_e2024_q15_p3.txt").expect("file");
+    let garden = Garden::parse(&data);
+    println!("part 3 = {}", garden.search_all().unwrap());
 }
 
 struct Garden {
     maze: HashSet<(i64, i64)>,
-    herb_types: HashSet<char>,
+    herb_types: u64,
     herbs: HashMap<(i64, i64), char>,
     start: (i64, i64),
 }
@@ -21,7 +25,7 @@ struct Garden {
 impl Garden {
     fn parse(data: &str) -> Self {
         let mut maze = HashSet::<(i64, i64)>::new();
-        let mut herb_types = HashSet::<char>::new();
+        let mut herb_types = 0;
         let mut herbs = HashMap::<(i64, i64), char>::new();
         let mut start = (0, 0);
 
@@ -39,7 +43,7 @@ impl Garden {
                     'A'..='Z' => {
                         maze.insert(loc);
                         herbs.insert(loc, ch);
-                        herb_types.insert(ch);
+                        herb_types |= 1 << (ch as u8 - b'A');
                     }
                     _ => panic!("invalid character '{ch}'"),
                 }
@@ -75,8 +79,7 @@ impl Garden {
     }
 
     fn search_all(&self) -> Option<usize> {
-        let herbs_remaining = (1u64 << self.herb_types.len()) - 1;
-        let start_state = (herbs_remaining, self.start);
+        let start_state = (self.herb_types, self.start);
 
         search::bfs(
             &start_state,
