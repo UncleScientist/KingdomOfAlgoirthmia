@@ -10,6 +10,11 @@ fn main() {
     // let machine = SlotMachine::read_faces("input/test_1.txt");
     let machine = SlotMachine::read_faces("input/everybody_codes_e2024_q16_p2.txt");
     println!("part 2 = {}", machine.find_part_2(PART2_PULLS));
+
+    // let machine = SlotMachine::read_faces("input/test_3.txt");
+    let machine = SlotMachine::read_faces("input/everybody_codes_e2024_q16_p3.txt");
+    let (min, max) = machine.find_part_3(256);
+    println!("part 3 = {max} {min}");
 }
 
 struct SlotMachine {
@@ -95,6 +100,61 @@ impl SlotMachine {
 
         subtotal + remaining_score
     }
+
+    fn find_part_3(&self, spins: usize) -> (usize, usize) {
+        let mut cache = HashMap::<(Vec<usize>, usize), usize>::new();
+        let min = find_by(
+            self,
+            &mut cache,
+            &vec![0; self.wheels.len()],
+            spins,
+            &|a: usize, b: usize| a.min(b),
+        );
+        cache.clear();
+        let max = find_by(
+            self,
+            &mut cache,
+            &vec![0; self.wheels.len()],
+            spins,
+            &|a: usize, b: usize| a.max(b),
+        );
+        (min, max)
+    }
+}
+
+fn find_by(
+    machine: &SlotMachine,
+    cache: &mut HashMap<(Vec<usize>, usize), usize>,
+    positions: &[usize],
+    remaining: usize,
+    compare: &impl Fn(usize, usize) -> usize,
+) -> usize {
+    if remaining == 0 {
+        return 0;
+    }
+    if let Some(answer) = cache.get(&(positions.to_vec(), remaining)) {
+        return *answer;
+    }
+    let back_one = (0..machine.wheels.len())
+        .map(|wheel| (positions[wheel] + machine.spins[wheel] - 1) % machine.wheels[wheel].len())
+        .collect::<Vec<_>>();
+    let forward_one = (0..machine.wheels.len())
+        .map(|wheel| (positions[wheel] + machine.spins[wheel] + 1) % machine.wheels[wheel].len())
+        .collect::<Vec<_>>();
+    let neutral = (0..machine.wheels.len())
+        .map(|wheel| (positions[wheel] + machine.spins[wheel]) % machine.wheels[wheel].len())
+        .collect::<Vec<_>>();
+    let back_score =
+        machine.calc_score(&back_one) + find_by(machine, cache, &back_one, remaining - 1, compare);
+    let forward_score = machine.calc_score(&forward_one)
+        + find_by(machine, cache, &forward_one, remaining - 1, compare);
+    let neutral_score =
+        machine.calc_score(&neutral) + find_by(machine, cache, &neutral, remaining - 1, compare);
+
+    let result = compare(back_score, compare(forward_score, neutral_score));
+    cache.insert((positions.to_vec(), remaining), result);
+
+    result
 }
 
 #[cfg(test)]
