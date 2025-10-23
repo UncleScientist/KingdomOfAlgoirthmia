@@ -5,6 +5,15 @@ use std::{
 
 fn main() {
     let lines = aoclib::read_lines("input/everybody_codes_e2024_q17_p1.txt");
+    let (star_count, edge_list) = generate_edges(&lines);
+    println!("part 1 = {}", star_count + prim(&edge_list));
+
+    let lines = aoclib::read_lines("input/everybody_codes_e2024_q17_p2.txt");
+    let (star_count, edge_list) = generate_edges(&lines);
+    println!("part 2 = {}", star_count + prim(&edge_list));
+}
+
+fn generate_edges(lines: &[String]) -> (usize, Vec<(usize, usize, usize)>) {
     let mut stars: Vec<(usize, usize)> = Vec::new();
 
     for (row, line) in lines.iter().enumerate() {
@@ -23,7 +32,7 @@ fn main() {
         }
     }
 
-    println!("part 1 = {}", stars.len() + prim(&edge_list));
+    (stars.len(), edge_list)
 }
 
 // vec: (dist, i, j)
