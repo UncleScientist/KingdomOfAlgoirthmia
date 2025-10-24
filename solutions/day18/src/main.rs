@@ -1,60 +1,75 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, path::Path};
 
 fn main() {
-    let lines = aoclib::read_lines("input/everybody_codes_e2024_q18_p1.txt");
-    // let lines = aoclib::read_lines("input/test_1.txt");
+    let mut garden = Garden::read_from_file("input/everybody_codes_e2024_q18_p1.txt");
+    println!("part 1 = {}", garden.time_to_water_trees());
+    let mut garden = Garden::read_from_file("input/everybody_codes_e2024_q18_p2.txt");
+    println!("part 2 = {}", garden.time_to_water_trees());
+}
 
-    let mut maze = HashSet::<(i64, i64)>::new();
-    let mut palms = HashSet::<(i64, i64)>::new();
-    let mut start = None;
+struct Garden {
+    maze: HashSet<(i64, i64)>,
+    palms: HashSet<(i64, i64)>,
+    start: Vec<(i64, i64)>,
+}
 
-    for (row, line) in lines.iter().enumerate() {
-        for (col, ch) in line.chars().enumerate() {
-            let (row, col) = (row as i64, col as i64);
-            match ch {
-                '#' => {}
-                '.' => {
-                    maze.insert((row, col));
-                    if col == 0 {
-                        start = Some((row, col));
+impl Garden {
+    fn read_from_file<P: AsRef<Path>>(pathname: P) -> Self {
+        let lines = aoclib::read_lines(pathname);
+        let last_col = (lines[0].len() - 1) as i64;
+
+        let mut maze = HashSet::<(i64, i64)>::new();
+        let mut palms = HashSet::<(i64, i64)>::new();
+        let mut start = Vec::new();
+
+        for (row, line) in lines.iter().enumerate() {
+            for (col, ch) in line.chars().enumerate() {
+                let (row, col) = (row as i64, col as i64);
+                match ch {
+                    '#' => {}
+                    '.' => {
+                        maze.insert((row, col));
+                        if col == 0 || col == last_col {
+                            start.push((row, col));
+                        }
                     }
-                }
-                'P' => {
-                    maze.insert((row, col));
-                    palms.insert((row, col));
-                }
-                _ => {
-                    panic!("invalid char '{ch}'");
-                }
-            }
-        }
-    }
-
-    let Some(start) = start else {
-        panic!("starting location not found");
-    };
-
-    let mut queue = HashSet::from([start]);
-    let mut visited = HashSet::new();
-    let mut time = 0;
-    while !palms.is_empty() {
-        let mut next_step = HashSet::new();
-        for pos in queue {
-            if visited.insert(pos) {
-                palms.remove(&pos);
-                for delta in [(-1, 0), (0, 1), (1, 0), (0, -1)] {
-                    let newpos = (pos.0 + delta.0, pos.1 + delta.1);
-                    if maze.contains(&newpos) {
-                        next_step.insert(newpos);
+                    'P' => {
+                        maze.insert((row, col));
+                        palms.insert((row, col));
+                    }
+                    _ => {
+                        panic!("invalid char '{ch}'");
                     }
                 }
             }
         }
-        queue = next_step;
-        if !palms.is_empty() {
-            time += 1;
-        }
+
+        Self { maze, palms, start }
     }
 
-    println!("part 1 = {time}");
+    fn time_to_water_trees(&mut self) -> usize {
+        let mut queue = HashSet::from_iter(self.start.clone());
+        let mut visited = HashSet::new();
+        let mut time = 0;
+        while !self.palms.is_empty() {
+            let mut next_step = HashSet::new();
+            for pos in queue {
+                if visited.insert(pos) {
+                    self.palms.remove(&pos);
+                    for delta in [(-1, 0), (0, 1), (1, 0), (0, -1)] {
+                        let newpos = (pos.0 + delta.0, pos.1 + delta.1);
+                        if self.maze.contains(&newpos) {
+                            next_step.insert(newpos);
+                        }
+                    }
+                }
+            }
+            queue = next_step;
+            if !self.palms.is_empty() {
+                time += 1;
+            }
+        }
+
+        time
+    }
 }
