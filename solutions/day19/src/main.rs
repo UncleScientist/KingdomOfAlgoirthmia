@@ -5,37 +5,16 @@ fn main() {
     let mut grid = Grid::from_file("input/everybody_codes_e2024_q19_p1.txt");
     // let mut grid = Grid::from_file("input/test_1.txt");
     apply_rotations(&grid.seq, &mut grid.message);
-    println!("part 1:");
-    grid._print();
+    println!("part 1 = {}", grid.extract_value().unwrap());
 
     let mut grid = Grid::from_file("input/everybody_codes_e2024_q19_p2.txt");
     // let mut grid = Grid::from_file("input/test_2.txt");
-    for _ in 0..100 {
-        apply_rotations(&grid.seq, &mut grid.message);
-    }
-    println!("part 2:");
-    grid._print();
+    grid.multiply_by(100);
+    println!("part 2 = {}", grid.extract_value().unwrap());
 
-    let grid = Grid::from_file("input/everybody_codes_e2024_q19_p3.txt");
-    let mut increment = (0..grid.message.len())
-        .map(|row| {
-            (0..grid.message[0].len())
-                .map(|col| (row, col))
-                .collect::<Vec<_>>()
-        })
-        .collect::<Vec<_>>();
-    apply_rotations(&grid.seq, &mut increment);
-
-    let map = Mapping(increment);
-    let map100 = mba(map, 1048576000);
-
-    for row in 0..grid.message.len() {
-        for col in 0..grid.message[0].len() {
-            let pos = map100.0[row][col];
-            print!("{}", grid.message[pos.0][pos.1])
-        }
-        println!();
-    }
+    let mut grid = Grid::from_file("input/everybody_codes_e2024_q19_p3.txt");
+    grid.multiply_by(1048576000);
+    println!("part 3 = {}", grid.extract_value().unwrap());
 }
 
 #[derive(Clone)]
@@ -110,10 +89,48 @@ impl Grid {
         Self { message, seq }
     }
 
+    fn multiply_by(&mut self, multiplier: usize) {
+        let mut increment = (0..self.message.len())
+            .map(|row| {
+                (0..self.message[0].len())
+                    .map(|col| (row, col))
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>();
+        apply_rotations(&self.seq, &mut increment);
+
+        let map = mba(Mapping(increment), multiplier);
+        let orig = self.message.clone();
+        for row in 0..self.message.len() {
+            for col in 0..self.message[0].len() {
+                let pos = map.0[row][col];
+                self.message[row][col] = orig[pos.0][pos.1];
+            }
+        }
+    }
+
     fn _print(&self) {
         for row in &self.message {
             println!("{}", row.iter().copied().collect::<String>());
         }
+    }
+
+    fn extract_value(&self) -> Option<String> {
+        for row in 0..self.message.len() {
+            for col in 0..self.message[0].len() {
+                if self.message[row][col] == '>' {
+                    let mut end = col + 1;
+                    let mut result = String::from("");
+                    while self.message[row][end] != '<' {
+                        result.push(self.message[row][end]);
+                        end += 1;
+                    }
+                    return Some(result);
+                }
+            }
+        }
+
+        None
     }
 }
 
