@@ -132,3 +132,10 @@ version = "0.1.0"
 dependencies = [
  "aoclib",
 ]
+
+[[package]]
+name = "day19"
+version = "0.1.0"
+dependencies = [
+ "aoclib",
+]
