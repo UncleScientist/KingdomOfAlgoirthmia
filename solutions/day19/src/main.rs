@@ -2,8 +2,17 @@ use std::path::Path;
 
 fn main() {
     let mut grid = Grid::from_file("input/everybody_codes_e2024_q19_p1.txt");
+    // let mut grid = Grid::from_file("input/test_1.txt");
     grid.apply_rotations();
     println!("part 1:");
+    grid._print();
+
+    let mut grid = Grid::from_file("input/everybody_codes_e2024_q19_p2.txt");
+    // let mut grid = Grid::from_file("input/test_2.txt");
+    for _ in 0..100 {
+        grid.apply_rotations();
+    }
+    println!("part 2:");
     grid._print();
 }
 
