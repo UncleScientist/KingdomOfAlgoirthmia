@@ -1,4 +1,7 @@
-use std::{collections::HashSet, path::Path};
+use std::{
+    collections::{HashMap, HashSet},
+    path::Path,
+};
 
 fn main() {
     println!("part 1 = {}", part_1());
@@ -42,41 +45,34 @@ fn part_2() -> Option<isize> {
     // let map = Map::from_file("input/test_2_3.txt");
     let map = Map::from_file("input/everybody_codes_e2024_q20_p2.txt");
 
-    let mut step = HashSet::new();
-    step.insert(Glider::new(&map, (-1, 0), 10000));
-    step.insert(Glider::new(&map, (0, 1), 10000));
-    step.insert(Glider::new(&map, (1, 0), 10000));
-    step.insert(Glider::new(&map, (0, -1), 10000));
-
-    let mut heights = vec![vec![(0isize, 0isize); map.grid[0].len()]; map.grid.len()];
+    let start_gliders = [
+        Glider::new(&map, (-1, 0), 10000),
+        Glider::new(&map, (0, 1), 10000),
+        Glider::new(&map, (1, 0), 10000),
+        Glider::new(&map, (0, -1), 10000),
+    ];
+    let mut search = HashMap::<GliderState, isize>::new();
+    for glider in start_gliders {
+        let (state, alt) = glider.get_state();
+        search.insert(state, alt);
+    }
 
     let mut time = 0;
-    while !step.is_empty() {
-        let mut next_step = HashSet::new();
-        for glider in step {
-            // println!("{time:3} | {glider:?}");
-            if glider.found_start(&map) {
+    while !search.is_empty() {
+        let mut next_search = search.clone();
+        for (glider_state, altitude) in search.iter() {
+            if *altitude >= 10000 && glider_state.found_start(&map) {
                 return Some(time);
             }
-            let (prev_visit, prev_height) = heights[glider.pos.0 as usize][glider.pos.1 as usize];
-            if prev_visit > glider.visited && prev_height > glider.altitude {
-                // println!("  -> skipping for higher altitude & visited");
-                continue;
-            }
-            heights[glider.pos.0 as usize][glider.pos.1 as usize] = (glider.visited, glider.altitude);
-            for neighbor in glider.next_pos(&map) {
-                if neighbor.altitude < 9990 || neighbor.altitude > 11000 {
-                    continue;
+            for neighbor in glider_state.next_pos(*altitude, &map) {
+                let (next_state, next_alt) = neighbor.get_state();
+                let cur_alt = next_search.entry(next_state.clone()).or_insert(next_alt);
+                if next_alt >= *cur_alt {
+                    *cur_alt = next_alt;
                 }
-                let (prev_visit, prev_height) = heights[neighbor.pos.0 as usize][neighbor.pos.1 as usize];
-                if prev_visit > glider.visited && prev_height > glider.altitude {
-                    continue;
-                }
-
-                next_step.insert(neighbor);
             }
         }
-        step = next_step;
+        search = next_search;
         time += 1;
     }
 
@@ -91,6 +87,58 @@ struct Glider {
     visited: isize,
 }
 
+#[derive(Debug, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
+struct GliderState {
+    pos: (i64, i64),
+    dir: (i64, i64),
+    visited: isize,
+}
+
+impl GliderState {
+    fn found_start(&self, map: &Map) -> bool {
+        self.visited == 3 && map.at_start(&self.pos)
+    }
+
+    fn next_pos(&self, cur_altitude: isize, map: &Map) -> Vec<Glider> {
+        let mut result = Vec::new();
+        let directions = if self.dir.0 == 0 {
+            [(-1, 0), (1, 0), self.dir]
+        } else {
+            [(0, 1), (0, -1), self.dir]
+        };
+        for dir in directions {
+            let mut visited = self.visited;
+            let pos = (self.pos.0 + dir.0, self.pos.1 + dir.1);
+            if !map.in_range(&pos) {
+                continue;
+            }
+            if (map.at_loc_a(&pos) && visited != 0)
+                || (map.at_loc_b(&pos) && visited != 1)
+                || (map.at_loc_c(&pos) && visited != 2)
+                || (map.at_start(&pos) && visited != 3)
+            {
+                continue;
+            }
+
+            visited += (map.at_loc_a(&pos) as isize)
+                + (map.at_loc_b(&pos) as isize)
+                + (map.at_loc_c(&pos) as isize);
+
+            if let Some(dh) = map.delta_height(pos) {
+                let altitude = dh + cur_altitude;
+                result.push(Glider {
+                    pos,
+                    dir,
+                    altitude,
+                    visited,
+                });
+            }
+        }
+
+        result
+    }
+}
+
 impl Glider {
     fn new(map: &Map, dir: (i64, i64), altitude: isize) -> Self {
         Glider {
@@ -99,6 +147,17 @@ impl Glider {
             altitude,
             visited: 0,
         }
+    }
+
+    fn get_state(&self) -> (GliderState, isize) {
+        (
+            GliderState {
+                pos: self.pos,
+                dir: self.dir,
+                visited: self.visited,
+            },
+            self.altitude,
+        )
     }
 
     fn next_pos(&self, map: &Map) -> Vec<Glider> {
@@ -140,7 +199,7 @@ impl Glider {
         result
     }
 
-    fn found_start(&self, map: &Map) -> bool {
+    fn _found_start(&self, map: &Map) -> bool {
         self.visited == 3 && self.altitude >= 10000 && map.at_start(&self.pos)
     }
 }
